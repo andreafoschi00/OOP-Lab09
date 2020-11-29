@@ -7,6 +7,8 @@ import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.Toolkit;
 import java.util.function.Function;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -33,26 +35,39 @@ import javax.swing.JTextArea;
 public final class LambdaFilter extends JFrame {
 
     private static final long serialVersionUID = 1760990730218643730L;
-
+    private static final String ANY_NON_WORD = "(\\s|\\p{Punct})+";
     private enum Command {
-        IDENTITY("No modifications", Function.identity());
-
-        private final String commandName;
-        private final Function<String, String> fun;
-
-        Command(final String name, final Function<String, String> process) {
-            commandName = name;
-            fun = process;
-        }
-
-        @Override
-        public String toString() {
-            return commandName;
-        }
-
-        public String translate(final String s) {
-            return fun.apply(s);
-        }
+    	/**
+    	 * Commands.
+    	 */
+    	IDENTITY("No modifications", Function.identity()),
+    	TO_LOWER("Lowercase", String::toLowerCase),
+    	COUNT("Count chars", s -> Integer.toString(s.length())),
+    	LINES("Count lines", s -> Long.toString(s.chars().filter(e -> e == '\n').count() + 1)),
+    	WORDS("Sort words in alphabetical order", s ->
+    		Arrays.stream(s.split(ANY_NON_WORD))
+    			.sorted()
+    			.collect(Collectors.joining("\n"))),
+    	WORDCOUNT("Count words", s ->
+    		Arrays.stream(s.split(ANY_NON_WORD))
+    			.collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+    			.entrySet().stream()
+    			.map(e -> e.getKey() + " -> " + e.getValue())
+    			.collect(Collectors.joining("\n"))
+    	);
+    	private final String commandName;
+    	private final Function<String, String> fun;
+    	Command(final String commandName, final Function<String, String> fun) {
+			this.commandName = commandName;
+			this.fun = fun;
+		}
+		@Override
+		public String toString() {
+			return commandName;
+		}
+    	public String translate(final String s) {
+    		return fun.apply(s);
+    	}
     }
 
     private LambdaFilter() {
